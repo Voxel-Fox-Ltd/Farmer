@@ -54,7 +54,7 @@ class Plots(client.Plugin):
                     FROM
                         animals
                     WHERE
-                        RANDOM() < animals.production_rate
+                        RANDOM() <= animals.production_rate
                     """,
                 )
                 animals = [utils.Animal.from_row(i) for i in animal_rows]
@@ -70,10 +70,10 @@ class Plots(client.Plugin):
                         plot_items
                     WHERE
                         plot_id = ANY($1::TEXT[])
-                    HAVING
-                        SUM(amount) < 100
                     GROUP BY
                         plot_id
+                    HAVING
+                        SUM(amount) < 100
                     """,
                     valid_plot_ids,
                 )
@@ -85,7 +85,7 @@ class Plots(client.Plugin):
                     except Exception:
                         pass
                 producing_animal_ids = [
-                    (i.plot_id, str(i.type))
+                    (i.plot_id, i.type.name)
                     for i in animals
                     if i.plot_id in valid_plot_ids
                 ]
@@ -474,43 +474,46 @@ class Plots(client.Plugin):
             )
             if plot is None:
                 return await ctx.send("You don't own that plot :(")
+            plot = await plot.fetch_animals(conn)
             assert plot
 
             # Move
-            await conn.execute(
-                """
-                INSERT INTO
-                    user_items
-                    (
-                        owner_id,
-                        guild_id,
-                        item,
-                        amount
-                    )
-                SELECT
-                    (
+            async with conn.transaction():
+                await conn.execute(
+                    """
+                    INSERT INTO
+                        user_items
+                        (
+                            owner_id,
+                            guild_id,
+                            item,
+                            amount
+                        )
+                    SELECT
                         $1,
                         $2,
-                        pi.item,
-                        pi.amount
-                    )
-                FROM
-                    plot_items pi
-                WHERE
-                    pi.id = $3
-                ON CONFLICT (owner_id, guild_id, item)
-                DO UPDATE
-                SET
-                    amount = user_items.amount + excluded.amount
-                """,
-                plot.owner_id,
-                plot.guild_id,
-                plot.id,
-            )
-            await conn.execute("DELETE FROM plot_items WHERE id = $1", plot.id)
+                        item,
+                        amount
+                    FROM
+                        plot_items
+                    WHERE
+                        plot_id = $3
+                    ON CONFLICT (owner_id, guild_id, item)
+                    DO UPDATE
+                    SET
+                        amount = user_items.amount + excluded.amount
+                    """,
+                    plot.owner_id,
+                    plot.guild_id,
+                    plot.id,
+                )
+                await conn.execute(
+                    "DELETE FROM plot_items WHERE plot_id = $1",
+                    plot.id,
+                )
 
         # And send
-        return await ctx.update(
+        await ctx.update(
             content=str(plot),
             embeds=[
                 novus.Embed().add_field(
@@ -520,3 +523,4 @@ class Plots(client.Plugin):
             ],
             components=None,
         )
+        await ctx.send("Moved items to your inventory.", ephemeral=True)

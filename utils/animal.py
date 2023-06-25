@@ -44,7 +44,7 @@ class Animal:
         self.production_rate = (
             production_rate
             if production_rate is not None
-            else random.random() + 0.5
+            else random.random()
         )
 
     def __str__(self) -> str:
