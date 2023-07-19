@@ -1,3 +1,4 @@
+from datetime import timedelta
 import itertools
 import random
 from typing import Any, Callable, overload
@@ -15,6 +16,8 @@ BUTTON_POSITIONS = set(list(itertools.permutations([0, 1, 2, 3, 4] * 2, 2)))
 
 
 class Plots(client.Plugin):
+
+    ANIMAL_PRODUCTION_TIMER = timedelta(seconds=15)
 
     async def on_load(self):
         self.item_production_task = (
@@ -43,7 +46,7 @@ class Plots(client.Plugin):
         while True:
 
             # Run every minute
-            await asyncio.sleep(60)
+            await asyncio.sleep(self.ANIMAL_PRODUCTION_TIMER.total_seconds())
 
             # And do our stuff
             async with db.Database.acquire() as conn:
@@ -234,7 +237,7 @@ class Plots(client.Plugin):
         Get the price that a new plot of land will cost a given user.
         """
 
-        return 0
+        return 1_000  # TODO set actual price
 
     plot = client.CommandDescription(
         # "plot" command command name
@@ -274,9 +277,9 @@ class Plots(client.Plugin):
                 if required_gold > inventory.money:
                     return await ctx.send(
                         ctx._(
-                            "You need **{required_gold}** gold to get a "
+                            "You need **{required_gold:,}** gold to get a "
                             "new plot of land (you currently have "
-                            "**{current_gold}**) :<"
+                            "**{current_gold:,}**) :<"
                         ).format(
                             required_gold=required_gold,
                             current_gold=inventory.money,
@@ -338,9 +341,9 @@ class Plots(client.Plugin):
                 if required_gold > inventory.money:
                     return await ctx.send(
                         ctx._(
-                            "You need **{required_gold}** gold to get a "
+                            "You need **{required_gold:,}** gold to get a "
                             "new plot of land (you currently have "
-                            "**{current_gold}**) :<"
+                            "**{current_gold:,}**) :<"
                         ).format(
                             required_gold=required_gold,
                             current_gold=inventory.money,

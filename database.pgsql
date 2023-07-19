@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS animals(
     id TEXT NOT NULL PRIMARY KEY DEFAULT (gen_random_uuid()::TEXT),
     type TEXT NOT NULL,
     plot_id TEXT NOT NULL REFERENCES plots(id) ON DELETE CASCADE,
-    production_rate FLOAT NOT NULL DEFAULT '1.0'
+    production_rate FLOAT NOT NULL DEFAULT '0.5'
 );
 CREATE INDEX IF NOT EXISTS animals_plot_id_idx
 ON animals(plot_id);

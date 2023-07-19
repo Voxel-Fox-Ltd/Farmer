@@ -25,12 +25,17 @@
     * A price for each animal available for that type of plot will be generated
     * Prices will be generated based on the sell price of each item's animal
     * The animals will be added to the plot if the user selects the animal and has the relevant amount of money
+    * A maximum of 10 animals can be added to a plot
 
 * `/plot get`
     * If the user has enough money available (or no other plots) they will be shown an array of 5x5 buttons for which they can purchase plots of land
     * When a plot of land is created, a single animal will be added to that piece of land
 
+* `/inventory [user?]`
+    * Show you the inventory for a given user.
+    * Defaults to yourself, of course.
+
 * Timer: 30 minutes
     * Every 30\*N minutes, an animal in a plot of land will produce an item (up to 10 items)
     * Up to 100 items can be in a plot's inventory
-    * The animal's N value is determined randomly from 0.5 to 1.5 upon its adoption
+    * The animal's N value is determined randomly from 0.1 to 0.9 upon its adoption

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Iterable, NoReturn
 from typing_extensions import Self
 
 from .animal import AnimalType
@@ -75,7 +75,11 @@ class UserItems(ItemInventory):
             Item(AnimalType[r["item"]], r["amount"])
             for r in rows
         ]
-        return cls(rows[0]["guild_id"], rows[0]["user_id"], items)
+        return cls(
+            guild_id=rows[0]["guild_id"],
+            user_id=rows[0]["owner_id"],
+            items=items,
+        )
 
     @classmethod
     async def fetch(cls, conn: asyncpg.Connection, guild_id: int, user_id: int) -> Self:
@@ -91,7 +95,7 @@ class UserItems(ItemInventory):
                 user_items
             WHERE
                 guild_id = $1
-                AND user_id = $2
+                AND owner_id = $2
             """,
             guild_id, user_id,
         )
@@ -178,14 +182,14 @@ class Inventory:
         row = await conn.fetch(
             """
             SELECT
-            *
+                *
             FROM
-            inventory
+                inventory
             WHERE
-                user_id = $1
-                AND guild_id = $2
+                guild_id = $1
+                AND owner_id = $2
             """,
-            user_id, guild_id,
+            guild_id, user_id,
         )
         if not row:
             return cls(
