@@ -260,10 +260,10 @@ class Plots(client.Plugin):
                 required_gold = self.get_plot_price(len(plots))
                 if required_gold > inventory.money:
                     return await ctx.send(
-                        (
-                            "You need **{required_gold}** gold to get a new "
-                            "plot of land (you currently have "
-                            "**{current_gold}**)"
+                        ctx._(
+                            "You need **{required_gold}** gold to get a "
+                            "new plot of land (you currently have "
+                            "**{current_gold}**) :<"
                         ).format(
                             required_gold=required_gold,
                             current_gold=inventory.money,
@@ -294,9 +294,9 @@ class Plots(client.Plugin):
         # Check that the user ID matches up with the component ID
         if int(required_id) != ctx.user.id:
             return await ctx.send(
-                (
-                    "Only **{user_mention}** can use these buttons! Please run "
-                    "{command_mention} to get buttons you can use."
+                ctx._(
+                    "Only **{user_mention}** can use these buttons! Please "
+                    "run {command_mention} to get buttons you can use."
                 ).format(
                     user_mention=f"<@{required_id}>",
                     command_mention=self.create_plot.mention,
@@ -324,10 +324,10 @@ class Plots(client.Plugin):
                 required_gold = self.get_plot_price(len(plots))
                 if required_gold > inventory.money:
                     return await ctx.send(
-                        (
-                            "You need **{required_gold}** gold to get a new "
-                            "plot of land (you currently have "
-                            "**{current_gold}**)"
+                        ctx._(
+                            "You need **{required_gold}** gold to get a "
+                            "new plot of land (you currently have "
+                            "**{current_gold}**) :<"
                         ).format(
                             required_gold=required_gold,
                             current_gold=inventory.money,
@@ -361,11 +361,10 @@ class Plots(client.Plugin):
         # And done :)
         await ctx.update(
             content=(
-                (
+                ctx._(
                     "Yay, **{user}**! You have a new plot of land! It even "
                     "came with a **{animal}**! :D"
-                )
-                .format(
+                ).format(
                     user=ctx.user.mention,
                     animal=new_animal,
                 )
@@ -395,7 +394,31 @@ class Plots(client.Plugin):
             open_plots_enabled=False,
             custom_id=lambda user_id, x, y, plot: f"PLOT_SHOW {user_id} {x} {y}",
         )
-        await ctx.send(components=components)
+        if ctx.custom_id:
+            await ctx.update(content=None, embeds=None, components=components)
+        else:
+            await ctx.send(components=components)
+
+    @client.event.filtered_component(r"PLOT_SHOW_ALL \d+")
+    async def plot_show_all_button_pressed(self, ctx: novus.types.ComponentI):
+        """
+        Pinged when a user pressed the "show all plots" button.
+        """
+
+        _, user_id = ctx.data.custom_id.split(" ")
+        user_id = int(user_id)
+        if user_id != ctx.user.id:
+            return await ctx.send(
+                ctx._(
+                    "Only **{user_mention}** can use these buttons! Please "
+                    "run {command_mention} to get buttons you can use."
+                ).format(
+                    user_mention=f"<@{user_id}>",
+                    command_mention=self.show_plot.mention,
+                ),
+                ephemeral=True,
+            )
+        return await self.show_plot(ctx)
 
     @client.event.filtered_component(r"PLOT_SHOW \d+ \d \d")
     async def plot_show_button_pressed(self, ctx: novus.types.ComponentI):
@@ -417,29 +440,32 @@ class Plots(client.Plugin):
                 (x, y,)
             )
             if plot is None:
+                # We shouldn't get here
                 return await ctx.send("You don't own that plot :(")
 
             # Get the animals and items for the plot
             plot = await plot.fetch_animals(conn)
-            items = await utils.PlotItems.fetch(conn, plot.id)
+            plot_inventory = await utils.PlotItems.fetch(conn, plot.id)
 
         # Format items on the plot
         text: str = ""
-        for i in sorted(items.items, key=lambda i: i.amount):
+        for i in sorted(plot_inventory.items, key=lambda i: i.amount):
             text += f"\N{BULLET} {i!s}\n"
         text = text or "Nothing yet :("
 
         # See if we should add a "move to inventory" button
-        components: list | None = None
-        if items.items:
-            components = [
-                novus.ActionRow([
-                    novus.Button(
-                        "Move items to inventory",
-                        custom_id=f"PLOT_MOVE_ITEMS {user_id} {x} {y}",
-                    ),
-                ]),
-            ]
+        ar = novus.ActionRow([
+            novus.Button(
+                ctx._("Show all plots"),
+                custom_id=f"PLOT_SHOW_ALL {user_id}",
+                style=novus.ButtonStyle.primary,
+            ),
+            novus.Button(
+                ctx._("Move items to inventory"),
+                custom_id=f"PLOT_MOVE_ITEMS {user_id} {x} {y}",
+                disabled=not bool(plot_inventory.items)
+            )
+        ])
 
         # And send
         return await ctx.update(
@@ -450,7 +476,7 @@ class Plots(client.Plugin):
                     inline=False,
                 ),
             ],
-            components=components,
+            components=[ar],
         )
 
     @client.event.filtered_component(r"PLOT_MOVE_ITEMS \d+ \d \d")
@@ -473,6 +499,7 @@ class Plots(client.Plugin):
                 (x, y,)
             )
             if plot is None:
+                # We shouldn't get here
                 return await ctx.send("You don't own that plot :(")
             plot = await plot.fetch_animals(conn)
             assert plot
@@ -517,10 +544,24 @@ class Plots(client.Plugin):
             content=str(plot),
             embeds=[
                 novus.Embed().add_field(
-                    "Items", "Nothing yet :(",
+                    ctx._("Items"),
+                    ctx._("Nothing yet :("),
                     inline=False,
                 ),
             ],
-            components=None,
+            components=[
+                novus.ActionRow([
+                    novus.Button(
+                        ctx._("Show all plots"),
+                        custom_id=f"PLOT_SHOW_ALL {user_id}",
+                        style=novus.ButtonStyle.primary,
+                    ),
+                    novus.Button(
+                        ctx._("Move items to inventory"),
+                        custom_id=f"PLOT_MOVE_ITEMS {user_id} {x} {y}",
+                        disabled=True,
+                    )
+                ])
+            ],
         )
         await ctx.send("Moved items to your inventory.", ephemeral=True)
