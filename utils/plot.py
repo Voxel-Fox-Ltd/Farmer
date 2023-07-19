@@ -211,10 +211,11 @@ class PlotWithAnimals(Plot):
             **kwargs,
         )
 
-    def __str__(self):
-        def make_row(k: int = 5) -> list[str]:
+    def __str__(self) -> str:
+        r = random.Random(self.id)
+        def make_row(r: random.Random, k: int = 5) -> list[str]:
             return [
-                random.choice([
+                r.choice([
                     "<:grass2:1058306471395328030>",
                     "<:grass3:1058307717124595792>",
                 ])
@@ -222,11 +223,11 @@ class PlotWithAnimals(Plot):
             ]
         rows = [
             ["<:fence:1058304105644294154>"] * 5,
-            make_row(),
-            make_row(),
-            make_row(),
-            make_row(),
-            make_row(),
+            make_row(r),
+            make_row(r),
+            make_row(r),
+            make_row(r),
+            make_row(r),
         ]
         assigned_plots: set[tuple[int, int]] = set()
         to_add = self.animals.copy()

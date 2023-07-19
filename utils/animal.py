@@ -19,7 +19,7 @@ __all__ = (
 )
 
 
-PRODUCTION_RATE_CURVE: list[float] = np.random.normal(0.1, 0.9, 1000)
+PRODUCTION_RATE_CURVE: list[float] = np.random.normal(0.1, 0.9, 1000)  # pyright: ignore
 
 
 class Animal:
