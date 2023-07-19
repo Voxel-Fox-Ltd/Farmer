@@ -236,8 +236,19 @@ class Plots(client.Plugin):
 
         return 0
 
-    @client.command(name="plot get")
-    async def create_plot(self, ctx: novus.types.CommandI):
+    plot = client.CommandDescription(
+        # "plot" command command name
+        name_localizations=LC._("plot"),
+    )
+
+    @client.command(
+        name="plot get",
+        # "plot get" subcommand command name
+        name_localizations=LC._("get"),
+        # "plot get" subcommand description
+        description_localizations=LC._("Create a new plot of land to rear animals on.")
+    )
+    async def create_plot(self, ctx: t.CommandI):
         """
         Create a new plot of land to rear animals on.
         """
@@ -374,7 +385,13 @@ class Plots(client.Plugin):
             components=None,
         )
 
-    @client.command(name="plot show")
+    @client.command(
+        name="plot show",
+        # "plot show" subcommand name
+        name_localizations=LC._("show"),
+        # "plot show" subcommand description
+        description_localizations=LC._("Show you buttons for all of your plots of land."),
+    )
     async def show_plot(self, ctx: t.CommandI):
         """
         Show you buttons for all of your plots of land.
@@ -453,7 +470,7 @@ class Plots(client.Plugin):
         text: str = ""
         for i in sorted(plot_inventory.items, key=lambda i: i.amount):
             text += f"\N{BULLET} {i!s}\n"
-        text = text or "Nothing yet :("
+        text = text or ctx._("Nothing yet :(")
 
         # See if we should add a "move to inventory" button
         ar = n.ActionRow([
@@ -474,7 +491,8 @@ class Plots(client.Plugin):
             content=str(plot),
             embeds=[
                 n.Embed().add_field(
-                    "Items", text.strip(),
+                    ctx._("Items"),
+                    text.strip(),
                     inline=False,
                 ),
             ],
@@ -566,4 +584,3 @@ class Plots(client.Plugin):
                 ])
             ],
         )
-        await ctx.send("Moved items to your inventory.", ephemeral=True)
