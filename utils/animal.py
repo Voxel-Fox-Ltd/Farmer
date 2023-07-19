@@ -5,6 +5,8 @@ from typing_extensions import Self
 from uuid import uuid4
 import random
 
+import numpy as np
+
 from .animal_type import AnimalType
 
 if TYPE_CHECKING:
@@ -15,6 +17,9 @@ if TYPE_CHECKING:
 __all__ = (
     'Animal',
 )
+
+
+PRODUCTION_RATE_CURVE: list[float] = np.random.normal(0.1, 0.9, 1000)
 
 
 class Animal:
@@ -42,9 +47,9 @@ class Animal:
         self.type: AnimalType = type
         self.plot_id: str = str(plot_id)
         self.production_rate = (
-            production_rate
-            if production_rate is not None
-            else random.random()
+            random.choice(PRODUCTION_RATE_CURVE)
+            if production_rate is None
+            else production_rate
         )
 
     def __str__(self) -> str:

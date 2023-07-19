@@ -2,3 +2,4 @@ novus>=1.0.0
 pyyaml
 asyncpg
 typing_extensions
+numpy
