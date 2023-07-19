@@ -3,7 +3,9 @@ import random
 from typing import Any, Callable, overload
 import asyncio
 
-import novus
+import novus as n
+from novus import types as t
+from novus.utils import Localization as LC
 from novus.ext import client, database as db
 
 import utils
@@ -186,7 +188,7 @@ class Plots(client.Plugin):
             open_plots_enabled: bool,
             content: Callable[[int, int, int, utils.PlotType | utils.Plot], str] = lambda user_id, x, y, plot: "\u200b",
             custom_id: Callable[[int, int, int, utils.PlotType | utils.Plot], str] = lambda user_id, x, y, plot: "",
-            ) -> list[novus.ActionRow]:
+            ) -> list[n.ActionRow]:
         """
         Get the buttons for the user's plots.
         """
@@ -200,8 +202,8 @@ class Plots(client.Plugin):
         # Show buttons with plots they can purchase
         plot_types = cls.get_user_plots(guild_id, user_id)
         components = [
-            novus.ActionRow([
-                novus.Button(
+            n.ActionRow([
+                n.Button(
                     label=content(
                         user_id,
                         x,
@@ -283,7 +285,7 @@ class Plots(client.Plugin):
         await ctx.send(components=components)
 
     @client.event.filtered_component(r"PLOT_PURCHASE \d+ \d \d")
-    async def create_plot_button(self, ctx: novus.types.ComponentI):
+    async def create_plot_button(self, ctx: t.ComponentI):
         """
         The plot purchase button has been pressed.
         """
@@ -373,7 +375,7 @@ class Plots(client.Plugin):
         )
 
     @client.command(name="plot show")
-    async def show_plot(self, ctx: novus.types.CommandI):
+    async def show_plot(self, ctx: t.CommandI):
         """
         Show you buttons for all of your plots of land.
         """
@@ -400,7 +402,7 @@ class Plots(client.Plugin):
             await ctx.send(components=components)
 
     @client.event.filtered_component(r"PLOT_SHOW_ALL \d+")
-    async def plot_show_all_button_pressed(self, ctx: novus.types.ComponentI):
+    async def plot_show_all_button_pressed(self, ctx: t.ComponentI):
         """
         Pinged when a user pressed the "show all plots" button.
         """
@@ -421,7 +423,7 @@ class Plots(client.Plugin):
         return await self.show_plot(ctx)
 
     @client.event.filtered_component(r"PLOT_SHOW \d+ \d \d")
-    async def plot_show_button_pressed(self, ctx: novus.types.ComponentI):
+    async def plot_show_button_pressed(self, ctx: t.ComponentI):
         """
         Pinged when a plot show button is pressed.
         """
@@ -454,13 +456,13 @@ class Plots(client.Plugin):
         text = text or "Nothing yet :("
 
         # See if we should add a "move to inventory" button
-        ar = novus.ActionRow([
-            novus.Button(
+        ar = n.ActionRow([
+            n.Button(
                 ctx._("Show all plots"),
                 custom_id=f"PLOT_SHOW_ALL {user_id}",
-                style=novus.ButtonStyle.primary,
+                style=n.ButtonStyle.primary,
             ),
-            novus.Button(
+            n.Button(
                 ctx._("Move items to inventory"),
                 custom_id=f"PLOT_MOVE_ITEMS {user_id} {x} {y}",
                 disabled=not bool(plot_inventory.items)
@@ -471,7 +473,7 @@ class Plots(client.Plugin):
         return await ctx.update(
             content=str(plot),
             embeds=[
-                novus.Embed().add_field(
+                n.Embed().add_field(
                     "Items", text.strip(),
                     inline=False,
                 ),
@@ -480,7 +482,7 @@ class Plots(client.Plugin):
         )
 
     @client.event.filtered_component(r"PLOT_MOVE_ITEMS \d+ \d \d")
-    async def plot_move_items_button_pressed(self, ctx: novus.types.ComponentI):
+    async def plot_move_items_button_pressed(self, ctx: t.ComponentI):
         """
         Pinged when a plot move items button is pressed.
         """
@@ -543,20 +545,20 @@ class Plots(client.Plugin):
         await ctx.update(
             content=str(plot),
             embeds=[
-                novus.Embed().add_field(
+                n.Embed().add_field(
                     ctx._("Items"),
                     ctx._("Nothing yet :("),
                     inline=False,
                 ),
             ],
             components=[
-                novus.ActionRow([
-                    novus.Button(
+                n.ActionRow([
+                    n.Button(
                         ctx._("Show all plots"),
                         custom_id=f"PLOT_SHOW_ALL {user_id}",
-                        style=novus.ButtonStyle.primary,
+                        style=n.ButtonStyle.primary,
                     ),
-                    novus.Button(
+                    n.Button(
                         ctx._("Move items to inventory"),
                         custom_id=f"PLOT_MOVE_ITEMS {user_id} {x} {y}",
                         disabled=True,
