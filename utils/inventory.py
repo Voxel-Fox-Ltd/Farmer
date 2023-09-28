@@ -31,7 +31,7 @@ class Item:
 
     def __str__(self) -> str:
         # return f"{self.amount} {self.animal.value.name} {self.get_name()}"
-        return f"{self.amount} {self.get_name()}"
+        return f"{self.amount:,} {self.get_name()}"
 
     @property
     def product(self) -> tuple[str, str]:
@@ -165,7 +165,7 @@ class Inventory:
     @classmethod
     def from_row(cls, data) -> Self:
         return cls(
-            user_id=data["user_id"],
+            user_id=data["owner_id"],
             guild_id=data["guild_id"],
             money=data["money"],
         )
