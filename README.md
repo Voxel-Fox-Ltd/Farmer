@@ -35,6 +35,15 @@
     * Show you the inventory for a given user.
     * Defaults to yourself, of course.
 
+* Selling items
+    * Users should be able to sell items on the "market"
+    * The market will be individualised per server (as best as I'm able)
+    * Every item has a base price of 50 gold.
+    * Each item will have a multiplier on its price based on the amount of that animal that is present in the guild after
+        - the number of total animals in the guild gets higher than 10
+        - the percentage of that animal's presence is higher than 5%
+        - the user trying to sell items has more than 5 animals
+
 * Timer: 30 minutes
     * Every 30\*N minutes, an animal in a plot of land will produce an item (up to 10 items)
     * Up to 100 items can be in a plot's inventory
