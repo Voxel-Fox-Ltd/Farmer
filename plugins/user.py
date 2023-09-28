@@ -51,8 +51,9 @@ class User(client.Plugin):
         embed = n.Embed(
             title="Inventory",
             description=(
-                f"* {money.money} gold\n"
+                f"* **{money.money:,} gold**\n"
                 + "\n".join(description_lines)
-            )
-        )
+            ),
+            color=0xf17824,
+        ).set_author_from_user(user)
         await ctx.send(embeds=[embed])
