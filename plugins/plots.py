@@ -44,7 +44,7 @@ class Plots(client.Plugin):
             animals = [utils.Animal.from_row(i) for i in animal_rows]
 
             # Get each plot that can support more items
-            all_plot_ids = set([i.plot_id for i in animals])
+            all_plot_ids = list(set([i.plot_id for i in animals]))
             plot_rows = await conn.fetch(
                 """
                 SELECT
@@ -57,17 +57,17 @@ class Plots(client.Plugin):
                 GROUP BY
                     plot_id
                 HAVING
-                    SUM(amount) < 100
+                    SUM(amount) >= 100
                 """,
                 all_plot_ids,
             )
 
             # Produce an item
-            valid_plot_ids = [r["plot_id"] for r in plot_rows]
+            invalid_plot_ids = [r["plot_id"] for r in plot_rows]
             producing_animal_ids = [
                 (i.plot_id, i.type.name)
                 for i in animals
-                if i.plot_id in valid_plot_ids
+                if i.plot_id not in invalid_plot_ids
             ]
             await conn.executemany(
                 """
