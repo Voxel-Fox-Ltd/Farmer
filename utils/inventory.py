@@ -74,6 +74,7 @@ class UserItems(ItemInventory):
         items = [
             Item(AnimalType[r["item"]], r["amount"])
             for r in rows
+            if r["amount"] > 0
         ]
         return cls(
             guild_id=rows[0]["guild_id"],
