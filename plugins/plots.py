@@ -446,6 +446,18 @@ class Plots(client.Plugin):
         _, user_id, x, y = ctx.data.custom_id.split(" ")
         user_id, x, y = int(user_id), int(x), int(y)
 
+        if user_id != ctx.user.id:
+            return await ctx.send(
+                ctx._(
+                    "Only **{user_mention}** can use these buttons! Please "
+                    "run {command_mention} to get buttons you can use."
+                ).format(
+                    user_mention=f"<@{user_id}>",
+                    command_mention=self.show_plot.mention,
+                ),
+                ephemeral=True,
+            )
+
         # Get the plot
         assert ctx.guild
         async with db.Database.acquire() as conn:
@@ -505,6 +517,18 @@ class Plots(client.Plugin):
         # Split the custom ID
         _, user_id, x, y = ctx.data.custom_id.split(" ")
         user_id, x, y = int(user_id), int(x), int(y)
+
+        if user_id != ctx.user.id:
+            return await ctx.send(
+                ctx._(
+                    "Only **{user_mention}** can use these buttons! Please "
+                    "run {command_mention} to get buttons you can use."
+                ).format(
+                    user_mention=f"<@{user_id}>",
+                    command_mention=self.show_plot.mention,
+                ),
+                ephemeral=True,
+            )
 
         # Get the plot
         assert ctx.guild
