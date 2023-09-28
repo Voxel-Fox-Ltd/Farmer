@@ -46,11 +46,12 @@ class Items(client.Plugin):
                 type=n.ApplicationOptionType.integer,
                 description="The amount of the item that you want to sell.",
                 min_value=1,
+                required=False,
             ),
         ],
         dm_permission=False,
     )
-    async def sell(self, ctx: t.CommandI, item: str, amount: int = 1):
+    async def sell(self, ctx: t.CommandI, item: str, amount: int = -1):
         """
         Sell an item on the market.
         """
@@ -85,6 +86,8 @@ class Items(client.Plugin):
                     .format(item=animal.value.name)
                 )
             )
+        elif amount == -1:
+            amount = current_amount
         elif current_amount < amount:
             amount_adjusted = True
             amount = current_amount
@@ -133,22 +136,16 @@ class Items(client.Plugin):
         async with db.Database.acquire() as conn:
             user_items = await UserItems.fetch(conn, ctx.guild.id, ctx.user.id)
         current_string: str = options["item"].value  # pyright: ignore
-        available_items = [
-            i
-            for i in AnimalType
-            if i.name in [o.animal.name for o in user_items.items]
-        ]
-        self.log.info(available_items)
         return sorted(
             [
-                n.ApplicationCommandChoice(i.value.product[-1].title(), i.name)
-                for i in available_items
+                n.ApplicationCommandChoice(f"{i.amount}x {i.animal.value.product[-1].title()}", i.animal.name)
+                for i in user_items.items
             ],
             key=lambda acc: get_similarity(str(acc.value).lower(), current_string.lower()),
             reverse=True,
         )[:25]
 
-    @client.event.filtered_component(r"SELL .*")
+    @client.event.filtered_component(r"^SELL .*$")
     async def sell_button_pressed(self, ctx: t.ComponentI):
         """
         A sell button has been pressed.
