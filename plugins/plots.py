@@ -215,7 +215,7 @@ class Plots(client.Plugin):
         Get the price that a new plot of land will cost a given user.
         """
 
-        return 1_000  # TODO set actual price
+        return (30_000 * current_plot_count) + ((3 ** (current_plot_count - 1)) * 1_000)
 
     plot = client.CommandDescription(
         # "plot" command command name
@@ -328,6 +328,22 @@ class Plots(client.Plugin):
                         ),
                         ephemeral=True,
                     )
+                assert inventory
+                assert required_gold
+
+                # Take the money from their inventory
+                await conn.execute(
+                    """
+                    UPDATE
+                        inventory
+                    SET
+                        money = money - $3
+                    WHERE
+                        user_id = $1
+                        AND guild_id = $2
+                    """,
+                    inventory.user_id, inventory.guild_id, required_gold,
+                )
 
             # Commit to database
             position = (int(x), int(y),)
