@@ -17,113 +17,91 @@ BUTTON_POSITIONS = set(list(itertools.permutations([0, 1, 2, 3, 4] * 2, 2)))
 
 class Plots(client.Plugin):
 
-    ANIMAL_PRODUCTION_TIMER = timedelta(seconds=15)
-
-    async def on_load(self):
-        self.item_production_task = (
-            asyncio.create_task(self.animal_item_production())
-        )
-
-    async def on_unload(self):
-        if hasattr(self, "item_production_task"):
-            task: asyncio.Task = self.item_production_task
-            try:
-                task.result()
-            except (asyncio.CancelledError, asyncio.InvalidStateError):
-                pass
-            except Exception as e:
-                self.log.error("Item production task failed", exc_info=e)
-            if not task.done():
-                task.cancel()
-
+    @client.loop(60)
     async def animal_item_production(self):
         """
         Loop through every animal, making the animal produce an item inside its
         relevant plot.
         """
 
-        self.log.info("Starting animal item production task")
-        while True:
+        random_key = random.random()
 
-            # Run every minute
-            await asyncio.sleep(self.ANIMAL_PRODUCTION_TIMER.total_seconds())
+        # And do our stuff
+        async with db.Database.acquire() as conn:
 
-            # And do our stuff
-            async with db.Database.acquire() as conn:
+            # Get all animals that can produce
+            animal_rows = await conn.fetch(
+                """
+                SELECT
+                    *
+                FROM
+                    animals
+                WHERE
+                    production_rate >= $1
+                """,
+                random_key,
+            )
+            animals = [utils.Animal.from_row(i) for i in animal_rows]
 
-                # Get all animals that can produce
-                animal_rows = await conn.fetch(
-                    """
-                    SELECT
-                        *
-                    FROM
-                        animals
-                    WHERE
-                        RANDOM() <= animals.production_rate
-                    """,
-                )
-                animals = [utils.Animal.from_row(i) for i in animal_rows]
+            # Get each plot that can support more items
+            all_plot_ids = set([i.plot_id for i in animals])
+            plot_rows = await conn.fetch(
+                """
+                SELECT
+                    plot_id,
+                    SUM(amount)
+                FROM
+                    plot_items
+                WHERE
+                    plot_id = ANY($1::TEXT[])
+                GROUP BY
+                    plot_id
+                HAVING
+                    SUM(amount) < 100
+                """,
+                all_plot_ids,
+            )
 
-                # Get each plot that can support more items
-                valid_plot_ids = set([i.plot_id for i in animals])
-                plot_rows = await conn.fetch(
-                    """
-                    SELECT
+            # Produce an item
+            valid_plot_ids = [r["plot_id"] for r in plot_rows]
+            producing_animal_ids = [
+                (i.plot_id, i.type.name)
+                for i in animals
+                if i.plot_id in valid_plot_ids
+            ]
+            await conn.executemany(
+                """
+                INSERT INTO
+                    plot_items
+                    (
                         plot_id,
-                        SUM(amount)
-                    FROM
-                        plot_items
-                    WHERE
-                        plot_id = ANY($1::TEXT[])
-                    GROUP BY
-                        plot_id
-                    HAVING
-                        SUM(amount) < 100
-                    """,
-                    valid_plot_ids,
-                )
-
-                # Produce an item
-                for i in plot_rows:
-                    try:
-                        valid_plot_ids.remove(i["plot_id"])
-                    except Exception:
-                        pass
-                producing_animal_ids = [
-                    (i.plot_id, i.type.name)
-                    for i in animals
-                    if i.plot_id in valid_plot_ids
-                ]
-                await conn.executemany(
-                    """
-                    INSERT INTO
-                        plot_items
-                        (
-                            plot_id,
-                            item,
-                            amount
-                        )
-                    VALUES
-                        (
-                            $1,
-                            $2,
-                            1
-                        )
-                    ON CONFLICT
-                        (plot_id, item)
-                    DO UPDATE
-                    SET
-                        amount = plot_items.amount + excluded.amount
-                    """,
-                    producing_animal_ids,
-                )
-            if producing_animal_ids:
-                self.log.info(
-                    "Animals produced! %s animals produced an item this loop",
-                    len(producing_animal_ids),
-                )
-            else:
-                self.log.info("No animals produced anything this loop")
+                        item,
+                        amount
+                    )
+                VALUES
+                    (
+                        $1,
+                        $2,
+                        1
+                    )
+                ON CONFLICT
+                    (plot_id, item)
+                DO UPDATE
+                SET
+                    amount = plot_items.amount + excluded.amount
+                """,
+                producing_animal_ids,
+            )
+        if producing_animal_ids:
+            self.log.info(
+                "Animals produced! %s animals produced an item this loop (%s)",
+                len(producing_animal_ids), random_key,
+            )
+        else:
+            self.log.info(
+                "No animals produced anything this loop (%s)",
+                random_key,
+            )
 
     @staticmethod
     def get_plot_type(
