@@ -198,3 +198,29 @@ class Inventory:
                 user_id=user_id,
             )
         return cls.from_row(row[0])
+
+    async def save(self, conn: asyncpg.Connection) -> Self:
+        """
+        Save the current instance to the database
+        """
+
+        row = await conn.fetch(
+            """
+            INSERT INTO
+                inventory
+                (
+                    guild_id,
+                    owner_id,
+                    money
+                )
+            VALUES
+                ($1, $2, $3)
+            ON CONFLICT
+                (guild_id, owner_id)
+            DO UPDATE SET
+                money = excluded.money
+            RETURNING *
+            """,
+            self.guild_id, self.user_id, self.money,
+        )
+        return self.from_row(row[0])

@@ -579,3 +579,85 @@ class Plots(client.Plugin):
                 ])
             ],
         )
+
+    @client.command(
+        name="plot buy-animal",
+        # "plot buy-animal" subcommand name
+        name_localizations=LC._("buy-animal"),
+        # "plot buy-animal" subcommand description
+        description_localizations=LC._("Purchase a new animal for one of your plots."),
+    )
+    async def buy_animal_plot(self, ctx: t.CommandI):
+        """
+        Get a new animal for one of your plots.
+        """
+
+        # Get the plots that the user owns
+        assert ctx.guild
+        async with db.Database.acquire() as conn:
+            plots = await utils.Plot.fetch_for_user(
+                conn,
+                ctx.guild.id,
+                ctx.user.id,
+            )
+        components = self.get_plot_buttons(
+            ctx.guild.id,
+            ctx.user.id,
+            plots,
+            owned_plots_enabled=True,
+            open_plots_enabled=False,
+            custom_id=lambda user_id, x, y, plot: f"PLOT_BUY_ANIMAL {user_id} {x} {y}",
+        )
+        await ctx.send(
+            ctx._("Which plot do you want to purchase an animal for?\nAll animals are **5,000 gold**."),
+            components=components,
+        )
+
+    @client.event.filtered_component(r"PLOT_BUY_ANIMAL \d+ \d \d")
+    async def buy_animal_button_pressed(self, ctx: t.ComponentI):
+        """
+        A plot's buy animal button has been pressed.
+        """
+
+        _, user_id_str, x_str, y_str = ctx.data.custom_id.split(" ")
+        user_id, x, y = int(user_id_str), int(x_str), int(y_str)
+        if await can_only_press(user_id, ctx, self.buy_animal_plot):
+            return
+
+        # Get the plot they want to buy an animal for
+        assert ctx.guild
+        async with db.Database.acquire() as conn:
+            plot = await utils.Plot.fetch_for_user(conn, ctx.guild.id, ctx.user.id, (x, y))
+            if plot is None:
+                return  # Shouldn't get here smiles
+
+            # Transaction time
+            async with conn.transaction():
+
+                # Make sure they have enough money for another animal
+                inventory = await utils.Inventory.fetch(conn, ctx.guild.id, ctx.user.id)
+                if inventory.money < 5_000:
+                    return await ctx.update(
+                        content=ctx._("You don't have enough money for another animal!"),
+                        components=None,
+                    )
+
+                # Add a random animal
+                possible_animals = [
+                    i for i in utils.AnimalType
+                    if i.value.plot_type == plot.type
+                ]
+                new_animal_type = random.choice(possible_animals)
+                new_animal = await utils.Animal(
+                    id=None,
+                    type=new_animal_type,
+                    plot_id=plot.id,
+                ).save(conn)
+                inventory.money -= 5_000
+                await inventory.save(conn)
+
+        # Tell them it's done
+        await ctx.update(
+            content=f"Added a new **{new_animal.type.value.name}** to your plot :3c",
+            components=None,
+        )
