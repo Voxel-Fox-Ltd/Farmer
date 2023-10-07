@@ -1,8 +1,6 @@
-from datetime import timedelta
 import itertools
 import random
 from typing import Any, Callable, overload
-import asyncio
 
 import novus as n
 from novus import types as t
@@ -13,6 +11,22 @@ import utils
 
 
 BUTTON_POSITIONS = set(list(itertools.permutations([0, 1, 2, 3, 4] * 2, 2)))
+
+
+async def can_only_press(user_id: int, ctx: n.Interaction, command: client.Command) -> bool:
+    if user_id != ctx.user.id:
+        await ctx.send(
+            ctx._(
+                "Only **{user_mention}** can use these buttons! Please "
+                "run {command_mention} to get buttons you can use."
+            ).format(
+                user_mention=f"<@{user_id}>",
+                command_mention=command.mention,
+            ),
+            ephemeral=True,
+        )
+        return True
+    return False
 
 
 class Plots(client.Plugin):
@@ -284,19 +298,8 @@ class Plots(client.Plugin):
 
         # Split the custom ID
         _, required_id, x, y = ctx.data.custom_id.split(" ")
-
-        # Check that the user ID matches up with the component ID
-        if int(required_id) != ctx.user.id:
-            return await ctx.send(
-                ctx._(
-                    "Only **{user_mention}** can use these buttons! Please "
-                    "run {command_mention} to get buttons you can use."
-                ).format(
-                    user_mention=f"<@{required_id}>",
-                    command_mention=self.create_plot.mention,
-                ),
-                ephemeral=True,
-            )
+        if await can_only_press(int(required_id), ctx, self.create_plot):
+            return
 
         # Check they have no other plots of land
         assert ctx.guild
@@ -423,17 +426,8 @@ class Plots(client.Plugin):
 
         _, user_id = ctx.data.custom_id.split(" ")
         user_id = int(user_id)
-        if user_id != ctx.user.id:
-            return await ctx.send(
-                ctx._(
-                    "Only **{user_mention}** can use these buttons! Please "
-                    "run {command_mention} to get buttons you can use."
-                ).format(
-                    user_mention=f"<@{user_id}>",
-                    command_mention=self.show_plot.mention,
-                ),
-                ephemeral=True,
-            )
+        if await can_only_press(user_id, ctx, self.show_plot):
+            return
         return await self.show_plot(ctx)
 
     @client.event.filtered_component(r"PLOT_SHOW \d+ \d \d")
@@ -445,18 +439,8 @@ class Plots(client.Plugin):
         # Split the custom ID
         _, user_id, x, y = ctx.data.custom_id.split(" ")
         user_id, x, y = int(user_id), int(x), int(y)
-
-        if user_id != ctx.user.id:
-            return await ctx.send(
-                ctx._(
-                    "Only **{user_mention}** can use these buttons! Please "
-                    "run {command_mention} to get buttons you can use."
-                ).format(
-                    user_mention=f"<@{user_id}>",
-                    command_mention=self.show_plot.mention,
-                ),
-                ephemeral=True,
-            )
+        if await can_only_press(user_id, ctx, self.show_plot):
+            return
 
         # Get the plot
         assert ctx.guild
@@ -517,18 +501,8 @@ class Plots(client.Plugin):
         # Split the custom ID
         _, user_id, x, y = ctx.data.custom_id.split(" ")
         user_id, x, y = int(user_id), int(x), int(y)
-
-        if user_id != ctx.user.id:
-            return await ctx.send(
-                ctx._(
-                    "Only **{user_mention}** can use these buttons! Please "
-                    "run {command_mention} to get buttons you can use."
-                ).format(
-                    user_mention=f"<@{user_id}>",
-                    command_mention=self.show_plot.mention,
-                ),
-                ephemeral=True,
-            )
+        if await can_only_press(user_id, ctx, self.show_plot):
+            return
 
         # Get the plot
         assert ctx.guild
