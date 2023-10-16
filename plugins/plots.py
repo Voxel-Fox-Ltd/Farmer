@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import itertools
 import random
-from typing import Any, Callable, overload
+from typing import TYPE_CHECKING, Any, Callable, overload
 
 import novus as n
 from novus import types as t
@@ -8,6 +10,9 @@ from novus.utils import Localization as LC
 from novus.ext import client, database as db
 
 import utils
+
+if TYPE_CHECKING:
+    import asyncpg
 
 
 BUTTON_POSITIONS = set(list(itertools.permutations([0, 1, 2, 3, 4] * 2, 2)))
@@ -600,6 +605,7 @@ class Plots(client.Plugin):
                 ctx.guild.id,
                 ctx.user.id,
             )
+            purchase_price = await self.get_animal_buy_price(conn, ctx.user.id)
         components = self.get_plot_buttons(
             ctx.guild.id,
             ctx.user.id,
@@ -609,9 +615,36 @@ class Plots(client.Plugin):
             custom_id=lambda user_id, x, y, plot: f"PLOT_BUY_ANIMAL {user_id} {x} {y}",
         )
         await ctx.send(
-            ctx._("Which plot do you want to purchase an animal for?\nAll animals are **5,000 gold**."),
+            (
+                ctx._("Which plot do you want to purchase an animal for?\nAll animals are **{animal_price:,} gold**.")
+                .format(animal_price=purchase_price)
+            ),
             components=components,
         )
+
+    async def get_animal_buy_price(
+            self,
+            conn: asyncpg.Connection,
+            user_id: int) -> int:
+        """
+        Get the purchase price for an animal for a given user.
+        """
+
+        # Get the number of animals they currently have
+        count = await conn.fetchval(
+            """
+            SELECT
+                COUNT(*)
+            FROM
+                animals
+                LEFT JOIN plots ON animals.plot_id = plots.id
+            WHERE
+                plots.owner_id = $1
+            """,
+            user_id,
+        )
+        count = count or 0
+        return (250 * count ** 2) + (2750 * count)
 
     @client.event.filtered_component(r"PLOT_BUY_ANIMAL \d+ \d \d")
     async def buy_animal_button_pressed(self, ctx: t.ComponentI):
@@ -631,12 +664,15 @@ class Plots(client.Plugin):
             if plot is None:
                 return  # Shouldn't get here smiles
 
+            # Get animal purchase price
+            purchase_price = await self.get_animal_buy_price(conn, user_id)
+
             # Transaction time
             async with conn.transaction():
 
                 # Make sure they have enough money for another animal
                 inventory = await utils.Inventory.fetch(conn, ctx.guild.id, ctx.user.id)
-                if inventory.money < 5_000:
+                if inventory.money < purchase_price:
                     return await ctx.update(
                         content=ctx._("You don't have enough money for another animal!"),
                         components=None,
@@ -653,7 +689,7 @@ class Plots(client.Plugin):
                     type=new_animal_type,
                     plot_id=plot.id,
                 ).save(conn)
-                inventory.money -= 5_000
+                inventory.money -= purchase_price
                 await inventory.save(conn)
 
         # Tell them it's done

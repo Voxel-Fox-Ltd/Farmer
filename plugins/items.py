@@ -163,6 +163,7 @@ class Items(client.Plugin):
         animal = AnimalType[item]
 
         # Sell their items
+        assert ctx.guild
         async with db.Database.acquire() as conn:
             async with conn.transaction():
                 new_amount = await conn.fetchval(
@@ -180,7 +181,7 @@ class Items(client.Plugin):
                     """,
                     ctx.user.id, ctx.guild.id, animal.name, amount,
                 )
-                if new_amount < 0:
+                if (new_amount or 0) < 0:
                     return await ctx.update(
                         content=ctx._("You don't have enough of that item to make this sale!"),
                         components=None,
