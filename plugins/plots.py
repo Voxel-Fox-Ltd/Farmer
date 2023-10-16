@@ -274,12 +274,12 @@ class Plots(client.Plugin):
                 if required_gold > inventory.money:
                     return await ctx.send(
                         ctx._(
-                            "You need **{required_gold:,}** gold to get a "
+                            "You need **{required_gold}** gold to get a "
                             "new plot of land (you currently have "
-                            "**{current_gold:,}**) :<"
+                            "**{current_gold}**) :<"
                         ).format(
-                            required_gold=required_gold,
-                            current_gold=inventory.money,
+                            required_gold=format(required_gold, ","),
+                            current_gold=format(inventory.money, ","),
                         ),
                         ephemeral=True,
                     )
@@ -327,12 +327,12 @@ class Plots(client.Plugin):
                 if required_gold > inventory.money:
                     return await ctx.send(
                         ctx._(
-                            "You need **{required_gold:,}** gold to get a "
+                            "You need **{required_gold}** gold to get a "
                             "new plot of land (you currently have "
-                            "**{current_gold:,}**) :<"
+                            "**{current_gold}**) :<"
                         ).format(
-                            required_gold=required_gold,
-                            current_gold=inventory.money,
+                            required_gold=format(required_gold, ","),
+                            current_gold=format(inventory.money, ","),
                         ),
                         ephemeral=True,
                     )
@@ -616,8 +616,8 @@ class Plots(client.Plugin):
         )
         await ctx.send(
             (
-                ctx._("Which plot do you want to purchase an animal for?\nAll animals are **{animal_price:,} gold**.")
-                .format(animal_price=purchase_price)
+                ctx._("Which plot do you want to purchase an animal for?\nAll animals are **{animal_price} gold**.")
+                .format(animal_price=format(purchase_price, ","))
             ),
             components=components,
         )
@@ -694,6 +694,9 @@ class Plots(client.Plugin):
 
         # Tell them it's done
         await ctx.update(
-            content=f"Added a new **{new_animal.type.value.name}** to your plot :3c",
+            content=(
+                ctx._("Added a new **{animal_type}** to your plot :3c")
+                .format(animal_type=new_animal.type.value.name)
+            ),
             components=None,
         )

@@ -101,11 +101,11 @@ class Items(client.Plugin):
             )
         content += "\n"
         content += (
-            ctx._("Sell **{amount:,}x {item}** @ **{sell_price:,} gold each**?")
+            ctx._("Sell **{amount}x {item}** @ **{sell_price} gold each**?")
             .format(
-                amount=amount,
+                amount=format(amount, ","),
                 item=animal.value.product[0 if amount == 1 else 1],
-                sell_price=sell_price,
+                sell_price=format(sell_price, ","),
             )
         )
         await ctx.send(
@@ -208,11 +208,11 @@ class Items(client.Plugin):
                 )
         await ctx.update(
             content=(
-                ctx._("You have sold **{amount:,}x {item}**! You now have **{money:,} gold** :3")
+                ctx._("You have sold **{amount}x {item}**! You now have **{money} gold** :3")
                 .format(
-                    amount=amount,
+                    amount=format(amount, ","),
                     item=animal.value.product[0 if amount == 1 else 1],
-                    money=new_money,
+                    money=format(new_money, ","),
                 )
             ),
             components=None,
