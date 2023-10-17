@@ -264,6 +264,7 @@ class Plots(client.Plugin):
 
             # They have plots already - lets see if they have the money to buy
             # a new plot as is
+            required_gold: int = 0
             if plots:
                 inventory = await utils.Inventory.fetch(
                     conn,
@@ -293,7 +294,13 @@ class Plots(client.Plugin):
             open_plots_enabled=True,
             custom_id=lambda user_id, x, y, plot: f"PLOT_PURCHASE {user_id} {x} {y}",
         )
-        await ctx.send(components=components)
+        await ctx.send(
+            (
+                ctx._("Which plot would you like to purchase? This will cost **{required_gold} gold**.")
+                .format(required_gold=format(required_gold, ","))
+            ),
+            components=components,
+        )
 
     @client.event.filtered_component(r"PLOT_PURCHASE \d+ \d \d")
     async def create_plot_button(self, ctx: t.ComponentI):
