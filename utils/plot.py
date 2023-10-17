@@ -213,12 +213,19 @@ class PlotWithAnimals(Plot):
 
     def __str__(self) -> str:
         r = random.Random(self.id)
+        ground_type: list[str]
+        if self.type == PlotType.SKY:
+            ground_type = ["\N{CLOUD}"]
+        elif self.type == PlotType.LAKE:
+            ground_type = ["\N{WATER WAVE}"]
+        else:
+            ground_type = [
+                "<:grass2:1058306471395328030>",
+                "<:grass3:1058307717124595792>",
+            ]
         def make_row(r: random.Random, k: int = 5) -> list[str]:
             return [
-                r.choice([
-                    "<:grass2:1058306471395328030>",
-                    "<:grass3:1058307717124595792>",
-                ])
+                r.choice(ground_type)
                 for _ in range(k)
             ]
         rows = [
@@ -232,7 +239,7 @@ class PlotWithAnimals(Plot):
         assigned_plots: set[tuple[int, int]] = set()
         to_add = self.animals.copy()
         while to_add:
-            position = tuple(random.choices(range(0, 5), k=2))
+            position: tuple[int, int] = tuple(random.choices(range(0, 5), k=2))  # pyright: ignore
             if position in assigned_plots:
                 continue
             animal = to_add.pop()
