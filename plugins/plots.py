@@ -347,18 +347,8 @@ class Plots(client.Plugin):
                 assert required_gold
 
                 # Take the money from their inventory
-                await conn.execute(
-                    """
-                    UPDATE
-                        inventory
-                    SET
-                        money = money - $3
-                    WHERE
-                        user_id = $1
-                        AND guild_id = $2
-                    """,
-                    inventory.user_id, inventory.guild_id, required_gold,
-                )
+                inventory.money -= required_gold
+                await inventory.save(conn)
 
             # Commit to database
             position = (int(x), int(y),)
