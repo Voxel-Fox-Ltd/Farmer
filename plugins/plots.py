@@ -394,7 +394,14 @@ class Plots(client.Plugin):
                     animal=new_animal,
                 )
             ),
-            components=None,
+            components=[
+                n.ActionRow([
+                    n.Button(
+                        ctx._("Check it out!"),
+                        custom_id=f"PLOT_SHOW {ctx.user.id} {x} {y}",
+                    ),
+                ]),
+            ],
         )
 
     @client.command(
