@@ -648,7 +648,7 @@ class Plots(client.Plugin):
             user_id,
         )
         count = count or 0
-        return (250 * count ** 2) + (2750 * count)
+        return (250 * count ** 2) + (750 * count) - 10
 
     @client.event.filtered_component(r"PLOT_BUY_ANIMAL \d+ \d \d")
     async def buy_animal_button_pressed(self, ctx: t.ComponentI):
