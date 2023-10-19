@@ -324,6 +324,7 @@ class Plots(client.Plugin):
 
             # They have plots already - lets see if they have the money to buy
             # a new plot as is
+            required_gold = 0
             if plots:
                 inventory = await utils.Inventory.fetch(
                     conn,
@@ -348,7 +349,7 @@ class Plots(client.Plugin):
 
                 # Take the money from their inventory
                 inventory.money -= required_gold
-                await inventory.save(conn)
+                inventory = await inventory.save(conn)
 
             # Commit to database
             position = (int(x), int(y),)
@@ -609,7 +610,7 @@ class Plots(client.Plugin):
                 ctx.guild.id,
                 ctx.user.id,
             )
-            purchase_price = await self.get_animal_buy_price(conn, ctx.user.id)
+            purchase_price = await self.get_animal_buy_price(conn, ctx.user.id, ctx.guild.id)
         components = self.get_plot_buttons(
             ctx.guild.id,
             ctx.user.id,
@@ -629,7 +630,8 @@ class Plots(client.Plugin):
     async def get_animal_buy_price(
             self,
             conn: asyncpg.Connection,
-            user_id: int) -> int:
+            user_id: int,
+            guild_id: int) -> int:
         """
         Get the purchase price for an animal for a given user.
         """
@@ -644,8 +646,9 @@ class Plots(client.Plugin):
                 LEFT JOIN plots ON animals.plot_id = plots.id
             WHERE
                 plots.owner_id = $1
+                AND plots.guild_id = $2
             """,
-            user_id,
+            user_id, guild_id,
         )
         count = count or 0
         return (250 * count ** 2) + (750 * count) - 10
@@ -669,7 +672,7 @@ class Plots(client.Plugin):
                 return  # Shouldn't get here smiles
 
             # Get animal purchase price
-            purchase_price = await self.get_animal_buy_price(conn, user_id)
+            purchase_price = await self.get_animal_buy_price(conn, user_id, ctx.guild.id)
 
             # Transaction time
             async with conn.transaction():
