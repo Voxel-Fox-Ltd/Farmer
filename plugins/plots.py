@@ -478,6 +478,11 @@ class Plots(client.Plugin):
         # See if we should add a "move to inventory" button
         ar = n.ActionRow([
             n.Button(
+                emoji="<:refresh:1166573347988045855>",
+                custom_id=f"PLOT_SHOW {user_id} {x} {y}",
+                style=n.ButtonStyle.secondary,
+            ),
+            n.Button(
                 ctx._("Show all plots"),
                 custom_id=f"PLOT_SHOW_ALL {user_id}",
                 style=n.ButtonStyle.primary,
@@ -576,6 +581,11 @@ class Plots(client.Plugin):
             ],
             components=[
                 n.ActionRow([
+                    n.Button(
+                        emoji="<:refresh:1166573347988045855>",
+                        custom_id=f"PLOT_SHOW {user_id} {x} {y}",
+                        style=n.ButtonStyle.secondary,
+                    ),
                     n.Button(
                         ctx._("Show all plots"),
                         custom_id=f"PLOT_SHOW_ALL {user_id}",
