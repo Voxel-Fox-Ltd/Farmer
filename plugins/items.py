@@ -77,7 +77,7 @@ class Items(client.Plugin):
                 """,
                 ctx.user.id, ctx.guild.id, animal.name,
             )
-            sell_price = await self.get_sell_price(conn, ctx.guild, animal.name)
+            sell_price = await self.get_sell_price(conn, ctx.guild, animal)
         amount_adjusted = False
         if current_amount is None or current_amount <= 0:
             return await ctx.send(
